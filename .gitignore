@@ -1,0 +1,14 @@
+*.txt
+*.png
+model
+__pycache__/
+param
+result
+dataset
+model*
+pth
+obj_data
+debug_program/*npy
+debug_program/*jpg
+*zip
+train_test*
