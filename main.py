@@ -14,10 +14,10 @@ from tool import visualize_gmm
 
 
 parser = argparse.ArgumentParser(description='Symbol emergence based on VAE+GMM Example')
-parser.add_argument('--batch-size', type=int, default=30, metavar='B', help='input batch size for training')
-parser.add_argument('--vae-iter', type=int, default=100, metavar='V', help='number of VAE iteration')
-parser.add_argument('--mh-iter', type=int, default=75, metavar='M', help='number of M-H mgmm iteration')
-parser.add_argument('--category', type=int, default=15, metavar='K', help='number of category for GMM module')
+parser.add_argument('--batch-size', type=int, default=10, metavar='B', help='input batch size for training')
+parser.add_argument('--vae-iter', type=int, default=50, metavar='V', help='number of VAE iteration')
+parser.add_argument('--mh-iter', type=int, default=50, metavar='M', help='number of M-H mgmm iteration')
+parser.add_argument('--category', type=int, default=10, metavar='K', help='number of category for GMM module')
 parser.add_argument('--mode', type=int, default=-1, metavar='M', help='0:All reject, 1:ALL accept')
 parser.add_argument('--debug', type=bool, default=False, metavar='D', help='Debug mode')
 parser.add_argument('--no-cuda', action='store_true', default=False, help='enables CUDA training')
@@ -68,13 +68,13 @@ train_loader2 = torch.utils.data.DataLoader(train_dataset2, batch_size=args.batc
 all_loader1 = torch.utils.data.DataLoader(train_dataset1, batch_size=D, shuffle=False)
 all_loader2 = torch.utils.data.DataLoader(train_dataset2, batch_size=D, shuffle=False)
 
-print(f"D={D}, Category:{args.category}")
+print(f"Total data:{D}, Category:{args.category}")
 print(f"VAE_iter:{args.vae_iter}, Batch_size:{args.batch_size}")
 print(f"MH_iter:{args.mh_iter}, MH_mode:{args.mode}(-1:Com 0:No-com 1:All accept)") 
 
 import cnn_vae_module_mnist
 
-mutual_iteration = 4
+mutual_iteration = 1
 mu_d_A = np.zeros((D)); var_d_A = np.zeros((D)) 
 mu_d_B = np.zeros((D)); var_d_B = np.zeros((D))
 for it in range(mutual_iteration):
@@ -285,7 +285,7 @@ for it in range(mutual_iteration):
         accept_count_AtoB[i] = count_AtoB; accept_count_BtoA[i] = count_BtoA
         
         if i == 0 or (i+1) % 10 == 0 or i == (iteration-1): 
-            print(f"=> Ep: {i+1}, A: {ARI_A[i]}, B: {ARI_B[i]}, C:{concidence[i]}, A2B:{int(accept_count_AtoB[i])}, B2A:{int(accept_count_BtoA[i])}")
+            print(f"=> Epoch: {i+1}, ARI_A: {ARI_A[i]}, ARI_B: {ARI_B[i]}, Kappa:{concidence[i]}, A2B:{int(accept_count_AtoB[i])}, B2A:{int(accept_count_BtoA[i])}")
         for d in range(D):
             mu_d_A[d] = mu_kd_A[np.argmax(w_dk[d])]
             var_d_A[d] = np.diag(np.linalg.inv(lambda_kdd_A[np.argmax(w_dk[d])]))
@@ -334,4 +334,4 @@ for it in range(mutual_iteration):
 
     cmx(iteration=it, y_true=z_truth_n, y_pred=result_a, agent="A", save_dir=result_dir)
     cmx(iteration=it, y_true=z_truth_n, y_pred=result_b, agent="B", save_dir=result_dir)
-    print(f"Iteration:{it} Done:max_A: {max(ARI_A)}, max_B: {max(ARI_B)}, max_c:{max(concidence)}")
+    print(f"Iteration:{it} Done:max_ARI_A: {max(ARI_A)}, max_ARI_B: {max(ARI_B)}, max_Kappa:{max(concidence)}")
