@@ -31,7 +31,6 @@ You can train model by running `main.py`.
 ```bash
 # Communication (Metropolis Hastings algorithm) 
 python main.py 
-python main.py -mode -1
 
 # No Communication 
 python main.py -mode 0
