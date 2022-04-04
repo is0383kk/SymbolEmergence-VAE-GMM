@@ -33,10 +33,10 @@ You can train model by running `main.py`.
 python main.py 
 
 # No Communication 
-python main.py -mode 0
+python main.py --mode 0
 
 # All Acceptance 
-python main.py -mode 1
+python main.py --mode 1
 ```
 # Sample output
 
@@ -106,13 +106,13 @@ VAEとGMMによって表現されるエージェント間の確率的推論に�
 `main.py`を実行することで確率的推論によるネーミングゲームを行います．
 ```bash
 # コミュニケーションモデル：メトロポリスヘイスティングス法によるネーミングゲームを行うモデル
-python main.py -mode -1
+python main.py 
 
 # ノンコミュニケーションモデル：個々のエージェントが独立して推論を行うモデル
-python main.py -mode 0
+python main.py --mode 0
 
 # All Acceptance model：コミュニケーションを行いますが発話者の提案を聞き手が全て受容してしまうモデル
-python main.py -mode 1
+python main.py --mode 1
 ```
 # 出力例
 ```
