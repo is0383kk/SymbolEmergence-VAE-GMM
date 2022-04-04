@@ -31,6 +31,7 @@ You can train model by running `main.py`.
 ```bash
 # Communication (Metropolis Hastings algorithm) 
 python main.py 
+python main.py -mode -1
 
 # No Communication 
 python main.py -mode 0
@@ -45,7 +46,7 @@ hogehoge:~/workspace$ python3 main.py --mode -1
 
 CUDA True
 Dataset : MNIST
-D=10000, Category:10
+Total data:10000, Category:10
 VAE_iter:50, Batch_size:10
 MH_iter:50, MH_mode:-1(-1:Com 0:No-com 1:All accept)
 ------------------Mutual learning session 0 begins------------------
@@ -58,18 +59,18 @@ VAE_Agent B Training Start(0): Epoch:50, Batch_size:10
 ====> Epoch: 25 Average loss: 98.2610
 ====> Epoch: 50 Average loss: 91.9621
 M-H algorithm Start(0): Epoch:50
-=> Ep: 1, A: 0.023, B: 0.015, C:0.422, A2B:5523, B2A:2410
-=> Ep: 10, A: 0.41, B: 0.387, C:0.853, A2B:8585, B2A:8743
-=> Ep: 20, A: 0.665, B: 0.66, C:0.915, A2B:8990, B2A:9128
-=> Ep: 30, A: 0.735, B: 0.736, C:0.933, A2B:9168, B2A:9289
-=> Ep: 40, A: 0.779, B: 0.783, C:0.945, A2B:9212, B2A:9284
-=> Ep: 50, A: 0.803, B: 0.808, C:0.95, A2B:9278, B2A:9390
-Iteration:0 Done:max_A: 0.803, max_B: 0.808, max_c:0.95
+=> Epoch: 1, ARI_A: 0.023, ARI_B: 0.015, Kappa:0.422, A2B:5523, B2A:2410
+=> Epoch: 10, ARI_A: 0.41, ARI_B: 0.387, Kappa:0.853, A2B:8585, B2A:8743
+=> Epoch: 20, ARI_A: 0.665, ARI_B: 0.66, Kappa:0.915, A2B:8990, B2A:9128
+=> Epoch: 30, ARI_A: 0.735, ARI_B: 0.736, Kappa:0.933, A2B:9168, B2A:9289
+=> Epoch: 40, ARI_A: 0.779, ARI_B: 0.783, Kappa:0.945, A2B:9212, B2A:9284
+=> Epoch: 50, ARI_A: 0.803, ARI_B: 0.808, Kappa:0.95, A2B:9278, B2A:9390
+Iteration:0 Done:max_ARI_A: 0.803, max_ARI_B: 0.808, max_Kappa:0.95
 ```
 About the evaluation index:
-- `A`: ARI of Agent A：The degree of agreement between agent A's sine variable w^A and the true MNIST label．
-- `B`: ARI of Agent B：The degree of agreement between agent B's sine variable w^B and the true MNIST label．
-- `C`: Kappa coefficients：The degree of agreement of the sine variables w^A and w^B between agents．
+- `ARI_A`: ARI of Agent A：The degree of agreement between agent A's sine variable w^A and the true MNIST label．
+- `ARI_B`: ARI of Agent B：The degree of agreement between agent B's sine variable w^B and the true MNIST label．
+- `Kappa`: Kappa coefficients：The degree of agreement of the sine variables w^A and w^B between agents．
 - `A2B`: When speaker A and listener B, the number of times B accepted the sign proposed by A.
 - `B2A`: When speaker B and listener A, the number of times A accepted the sign proposed by B.
 
