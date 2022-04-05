@@ -38,6 +38,9 @@ python main.py --mode 0
 # All Acceptance 
 python main.py --mode 1
 ```
+- Communication：Playing the naming game with probabilistic inference based on the Metropolis-Hastings algorithm. Acceptance and rejection of the speaker's utterance under the Metropolis Hastings algorithm.  
+- No communication：Both agents do inference independently.  
+- All Acceptance：Both agents accept all of each other's utterances. No rejection based on Metropolis Hastings method.  
 # Sample output
 
 ```
