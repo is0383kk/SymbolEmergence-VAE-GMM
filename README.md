@@ -170,5 +170,3 @@ Recall image of Agent B in `/model/debug/reconB/`：
 <img src='/image/recall_B.png' width="400px">
 </div>
 コミュニケーションを行ったモデルではエージェントの想起画像が共有されていることがわかります.  
-
-# Appendix
