@@ -70,11 +70,11 @@ M-H algorithm Start(0): Epoch:50
 Iteration:0 Done:max_ARI_A: 0.803, max_ARI_B: 0.808, max_Kappa:0.95
 ```
 About the evaluation index:
-- `ARI_A`: ARI of Agent A：The degree of agreement between agent A's sine variable w^A and the true MNIST label．
-- `ARI_B`: ARI of Agent B：The degree of agreement between agent B's sine variable w^B and the true MNIST label．
-- `Kappa`: Kappa coefficients：The degree of agreement of the sine variables w^A and w^B between agents．
-- `A2B`: When speaker A and listener B, the number of times B accepted the sign proposed by A.
-- `B2A`: When speaker B and listener A, the number of times A accepted the sign proposed by B.
+- `ARI_A`: ARI of Agent A：The degree of agreement between agent A's sine variable w^A and the true MNIST label．  
+- `ARI_B`: ARI of Agent B：The degree of agreement between agent B's sine variable w^B and the true MNIST label．  
+- `Kappa`: Kappa coefficients：The degree of agreement of the sine variables w^A and w^B between agents．  
+- `A2B`: When speaker A and listener B, the number of times B accepted the sign proposed by A.  
+- `B2A`: When speaker B and listener A, the number of times A accepted the sign proposed by B.  
 ※ARI tends to be low if batch size is increased too much  
 
 # Recalled image by Agents
@@ -170,4 +170,5 @@ Recall image of Agent B in `/model/debug/reconB/`：
 <img src='/image/recall_B.png' width="400px">
 </div>
 コミュニケーションを行ったモデルではエージェントの想起画像が共有されていることがわかります.  
+
 # Appendix
