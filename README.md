@@ -75,6 +75,7 @@ About the evaluation index:
 - `Kappa`: Kappa coefficients：The degree of agreement of the sine variables w^A and w^B between agents．
 - `A2B`: When speaker A and listener B, the number of times B accepted the sign proposed by A.
 - `B2A`: When speaker B and listener A, the number of times A accepted the sign proposed by B.
+※ARI tends to be low if batch size is increased too much  
 
 # Recalled image by Agents
 Agents can recall the image after the naming game is over.  
@@ -169,3 +170,4 @@ Recall image of Agent B in `/model/debug/reconB/`：
 <img src='/image/recall_B.png' width="400px">
 </div>
 コミュニケーションを行ったモデルではエージェントの想起画像が共有されていることがわかります.  
+# Appendix
