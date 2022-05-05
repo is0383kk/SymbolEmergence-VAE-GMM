@@ -97,7 +97,7 @@ Communication between agents shows that the objects in the recalled image are sh
 
 
 ----
-# VAEを活用した実画像からの記号創発
+# 変分オートエンコーダを活用した実画像からの記号創発
 VAEとGMMによって表現されるエージェント間の確率的推論によるネーミングゲームにより，両エージェントの記号を共有することを目的とします．
 
 リポジトリのプログラムについて:
