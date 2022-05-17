@@ -29,14 +29,11 @@ What this repo contains:
 # How to run
 You can train model by running `main.py`.  
 ```bash
-# Communication (Metropolis Hastings algorithm) 
- $ python main.py 
+ $ python main.py # Communication (Metropolis Hastings algorithm) 
 
-# No Communication 
- $ python main.py --mode 0
+ $ python main.py --mode 0 # No Communication 
 
-# All Acceptance 
- $ python main.py --mode 1
+ $ python main.py --mode 1 # All Acceptance 
 ```
 - Communication：Playing the naming game with probabilistic inference based on the Metropolis-Hastings algorithm. Acceptance and rejection of the speaker's utterance under the Metropolis Hastings algorithm.  
 - No communication：Both agents do inference independently.  
