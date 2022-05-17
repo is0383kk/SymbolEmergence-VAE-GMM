@@ -43,7 +43,7 @@ python main.py --mode 1
 - All Acceptance：Both agents accept all of each other's utterances. No rejection based on Metropolis Hastings method.  
 # Sample output
 
-```sh
+```bash
 ~$ python3 main.py 
 
 CUDA True
