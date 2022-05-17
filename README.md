@@ -44,7 +44,7 @@ python main.py --mode 1
 # Sample output
 
 ```console
-~$ python3 main.py 
+ $ python3 main.py 
 
 CUDA True
 Dataset : MNIST
