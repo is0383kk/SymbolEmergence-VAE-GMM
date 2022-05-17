@@ -1,7 +1,7 @@
 # SymbolEmergence-VAE-GMM
 Naming game with probabilistic inference between agents represented by VAE and GMM.  
 
-Model Overview.  
+Model (Inter-GMM-VAE) Overview.  
 Each agent is represented by a VAE and a GMM.  
 Agents reason in terms of naming probabilistic inferences based on the Metropolis Hastings algorithm.  
 <div>
