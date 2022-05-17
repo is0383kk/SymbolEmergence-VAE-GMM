@@ -1,4 +1,4 @@
-# SymbolEmergence-VAE-GMM
+# Symbol Emergence-VAE-GMM (Inter-GMM-VAE)
 Naming game with probabilistic inference between agents represented by VAE and GMM.  
 
 Model (Inter-GMM-VAE) Overview.  
