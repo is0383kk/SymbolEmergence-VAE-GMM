@@ -1,3 +1,6 @@
+# Emergent Communication through Metropolis-Hastings Naming Game with Deep Generative Models
+This repository is an implementation of [a](https://arxiv.org/abs/2205.12392)
+
 # Symbol Emergence-VAE-GMM (Inter-GMM-VAE)
 Naming game with probabilistic inference between agents represented by VAE and GMM.  
 
