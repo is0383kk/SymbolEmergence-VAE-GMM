@@ -7,7 +7,7 @@ Naming game with probabilistic inference between agents represented by VAE and G
 
 Model (Inter-GMM-VAE) Overview.  
 Each agent is represented by a VAE and a GMM.  
-Agents reason in terms of naming probabilistic inferences based on the Metropolis Hastings algorithm.  
+Agents reason in terms of naming probabilistic inferences based on the Metropolis Hastings algorithm.    
 <div>
 <img src='/image/se_vaegmm.png' width="400px">
 <img src='/image/define.png' width="400px">
