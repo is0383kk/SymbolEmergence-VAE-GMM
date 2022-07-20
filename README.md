@@ -106,6 +106,8 @@ VAEとGMMによって表現されるエージェント間の確率的推論に�
 - `cnn_vae_module_mnist.py`: main.py内でVAEの学習を行わせるプログラム．
 - `recall_image.py`: 学習後のエージェントに画像の想起を行わせるプログラム．
 - `tool.py`: 様々な関数が格納されたプログラム.
+  
+[本リポジトリは2022年度人工知能学会全国大会で発表したものとなります](https://www.jstage.jst.go.jp/article/pjsai/JSAI2022/0/JSAI2022_3L3GS802/_article/-char/ja/)
 
 # 実行方法
 `main.py`を実行することで確率的推論によるネーミングゲームを行います．
