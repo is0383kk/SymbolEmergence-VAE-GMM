@@ -170,3 +170,7 @@ Recall image of Agent B in `/model/debug/reconB/`：
 <img src='/image/recall_B.png' width="400px">
 </div>
 コミュニケーションを行ったモデルではエージェントの想起画像が共有されていることがわかります.  
+
+# 付録
+[Emergent Communication through Metropolis-Hastings Naming Game with Deep Generative Modelsを読んだメモ
+](https://tokumini.hatenablog.com/entry/2024/03/03/180000)
