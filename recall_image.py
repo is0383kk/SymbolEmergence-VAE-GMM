@@ -1,118 +1,387 @@
-import os
-import numpy as np
-from scipy.stats import wishart 
-import matplotlib.pyplot as plt
-from tool import calc_ari, visualize_gmm
-from sklearn.metrics import cohen_kappa_score
-import torch
-from torchvision import datasets, transforms
-from torchvision.utils import save_image
-from torch.utils.data.dataset import Subset
+"""
+Image recall module for Symbol Emergence VAE+GMM model.
+This module handles post-training image reconstruction and visualization.
+"""
+
 import argparse
-#from custom_data import CustomDataset
+from pathlib import Path
+from typing import List, Tuple
+
+import torch
 from PIL import Image
-
-parser = argparse.ArgumentParser(description='Symbol emergence based on VAE+GMM Example')
-parser.add_argument('--batch-size', type=int, default=10, metavar='B', help='input batch size for training')
-parser.add_argument('--vae-iter', type=int, default=100, metavar='V', help='number of VAE iteration')
-parser.add_argument('--mh-iter', type=int, default=100, metavar='M', help='number of M-H mgmm iteration')
-parser.add_argument('--category', type=int, default=28, metavar='K', help='number of category for GMM module')
-parser.add_argument('--no-cuda', action='store_true', default=False, help='enables CUDA training')
-parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed')
-args = parser.parse_args()
-args.cuda = not args.no_cuda and torch.cuda.is_available()
-torch.manual_seed(args.seed)
-device = torch.device("cuda" if args.cuda else "cpu")
-
-############################## Making directory ##############################
-
-file_name = "debug"; model_dir = "./model"; dir_name = "./model/"+file_name# debugフォルダに保存される
-graphA_dir = "./model/"+file_name+"/graphA"; graphB_dir = "./model/"+file_name+"/graphB" # 各種グラフの保存先
-pth_dir = "./model/"+file_name+"/pth";npy_dir = "./model/"+file_name+"/npy"
-reconA_dir = model_dir+"/"+file_name+"/reconA/graph_dist"; reconB_dir = model_dir+"/"+file_name+"/reconB/graph_dist"
-log_dir = model_dir+"/"+file_name+"/log"; result_dir = model_dir+"/"+file_name+"/result"
-if not os.path.exists(model_dir):   os.mkdir(model_dir)
-if not os.path.exists(dir_name):    os.mkdir(dir_name)
-if not os.path.exists(pth_dir):    os.mkdir(pth_dir)
-if not os.path.exists(graphA_dir):   os.mkdir(graphA_dir)
-if not os.path.exists(graphB_dir):   os.mkdir(graphB_dir)
-if not os.path.exists(npy_dir):    os.mkdir(npy_dir)
-if not os.path.exists(reconA_dir):    os.mkdir(reconA_dir)
-if not os.path.exists(reconB_dir):    os.mkdir(reconB_dir)
-if not os.path.exists(log_dir):    os.mkdir(log_dir)
-if not os.path.exists(result_dir):    os.mkdir(result_dir)
-
-
-############################## Prepareing Dataset ##############################
-
-# MNIST左右回転設定
-angle_a = 0 # 回転角度
-angle_b = 45 # 回転角度
-trans_ang1 = transforms.Compose([transforms.RandomRotation(degrees=(-angle_a,-angle_a)), transforms.ToTensor()]) # -angle度回転設定
-trans_ang2 = transforms.Compose([transforms.RandomRotation(degrees=(angle_b,angle_b)), transforms.ToTensor()]) # angle度回転設定
-# データセット定義
-trainval_dataset1 = datasets.MNIST('./../data', train=True, transform=trans_ang1, download=False) # Agent A用 MNIST
-trainval_dataset2 = datasets.MNIST('./../data', train=True, transform=trans_ang2, download=False) # Agent B用 MNIST
-n_samples = len(trainval_dataset1)
-D = int(n_samples * (1/6)) # データ総数
-subset1_indices1 = list(range(0, D)); subset2_indices1 = list(range(D, n_samples)) 
-subset1_indices2 = list(range(0, D)); subset2_indices2 = list(range(D, n_samples)) 
-train_dataset1 = Subset(trainval_dataset1, subset1_indices1); val_dataset1 = Subset(trainval_dataset1, subset2_indices1)
-train_dataset2 = Subset(trainval_dataset2, subset1_indices1); val_dataset2 = Subset(trainval_dataset2, subset2_indices2)
-train_loader1 = torch.utils.data.DataLoader(train_dataset1, batch_size=args.batch_size, shuffle=False) # train_loader for agent A
-train_loader2 = torch.utils.data.DataLoader(train_dataset2, batch_size=args.batch_size, shuffle=False) # train_loader for agent B
-all_loader1 = torch.utils.data.DataLoader(train_dataset1, batch_size=D, shuffle=False) # データセット総数分のローダ
-all_loader2 = torch.utils.data.DataLoader(train_dataset2, batch_size=D, shuffle=False) # データセット総数分のローダ
+from torch.utils.data.dataset import Subset
+from torchvision import datasets, transforms
 
 import cnn_vae_module_mnist
+from tool import visualize_gmm
 
-def get_concat_h_multi_resize(dir_name, agent, resample=Image.BICUBIC):
-    im0 = Image.open(dir_name+'/recon'+agent+'/manual_0.png');im1 = Image.open(dir_name+'/recon'+agent+'/manual_1.png')
-    im2 = Image.open(dir_name+'/recon'+agent+'/manual_2.png');im3 = Image.open(dir_name+'/recon'+agent+'/manual_3.png')
-    im4 = Image.open(dir_name+'/recon'+agent+'/manual_4.png');im5 = Image.open(dir_name+'/recon'+agent+'/manual_5.png')
-    im6 = Image.open(dir_name+'/recon'+agent+'/manual_6.png');im7 = Image.open(dir_name+'/recon'+agent+'/manual_7.png')
-    im8 = Image.open(dir_name+'/recon'+agent+'/manual_8.png');im9 = Image.open(dir_name+'/recon'+agent+'/manual_9.png')
-    
-    im_list = [im0, im1, im2, im3, im4, im5, im6, im7, im8, im9]
-    min_height = min(im.height for im in im_list)
-    im_list_resize = [im.resize((int(im.width * min_height / im.height), min_height),resample=resample)
-                      for im in im_list]
-    total_width = sum(im.width for im in im_list_resize)
-    dst = Image.new('RGB', (total_width, min_height))
-    pos_x = 0
-    for im in im_list_resize:
-        dst.paste(im, (pos_x, 0))
-        pos_x += im.width
-    dst.save(dir_name+'/recon'+agent+'/concat.png')
 
-def decode_from_mgmm(load_iteration, sigma, K, decode_k, sample_num, manual, dir_name):
-    for i in range(K):
-        sample_d = visualize_gmm(iteration=load_iteration, # load iteration model 
-                                sigma=sigma,
-                                K=K, 
-                                decode_k=i, 
-                                sample_num=sample_num, 
-                                manual=manual, 
-                                model_dir=dir_name, agent="A")
-        cnn_vae_module_mnist.decode(iteration=load_iteration, decode_k=i, sample_num=sample_num, 
-                          sample_d=sample_d, manual=manual, model_dir=dir_name, agent="A")
-        sample_d = visualize_gmm(iteration=load_iteration, # load iteration model 
-                                sigma=sigma,
-                                K=K, 
-                                decode_k=i, 
-                                sample_num=sample_num, 
-                                manual=manual, 
-                                model_dir=dir_name, agent="B")
-        cnn_vae_module_mnist.decode(iteration=load_iteration, decode_k=i, sample_num=sample_num, 
-                          sample_d=sample_d, manual=manual, model_dir=dir_name, agent="B")
+class Config:
+    """Configuration class for recall image parameters."""
 
-def main():
-    load_iteration = 0
-    decode_from_mgmm(load_iteration=load_iteration, sigma=0, K=10, decode_k=None, sample_num=1, manual=True, dir_name=dir_name)
-    get_concat_h_multi_resize(dir_name = dir_name, agent="A"); get_concat_h_multi_resize(dir_name = dir_name, agent="B")
+    def __init__(self):
+        self.batch_size = 10
+        self.vae_iter = 100
+        self.mh_iter = 100
+        self.category = 28
+        self.no_cuda = False
+        self.seed = 1
+        self.angle_a = 0
+        self.angle_b = 45
+        self.data_fraction = 1 / 6
+        self.file_name = "debug"
+        self.model_dir = "./model"
 
-    #cnn_vae_module_mnist.plot_latent(iteration=load_iteration, all_loader=all_loader1, model_dir=dir_name, agent="A") # plot latent space of VAE on Agent A
-    #cnn_vae_module_mnist.plot_latent(iteration=load_iteration, all_loader=all_loader2, model_dir=dir_name, agent="B") # plot latent space of VAE on Agent B
+    def setup_device(self) -> torch.device:
+        """Setup computing device (CPU/CUDA)."""
+        self.cuda = not self.no_cuda and torch.cuda.is_available()
+        torch.manual_seed(self.seed)
+        return torch.device("cuda" if self.cuda else "cpu")
 
-if __name__=="__main__":
-    main()
+
+class DirectoryManager:
+    """Manages directory creation and path handling."""
+
+    def __init__(self, config: Config):
+        self.config = config
+        self.base_dir = Path(config.model_dir) / config.file_name
+        self._setup_directories()
+
+    def _setup_directories(self) -> None:
+        """Create all necessary directories."""
+        directories = [
+            self.config.model_dir,
+            self.base_dir,
+            self.base_dir / "graphA",
+            self.base_dir / "graphB",
+            self.base_dir / "pth",
+            self.base_dir / "npy",
+            self.base_dir / "reconA" / "graph_dist",
+            self.base_dir / "reconB" / "graph_dist",
+            self.base_dir / "log",
+            self.base_dir / "result",
+        ]
+
+        for directory in directories:
+            Path(directory).mkdir(parents=True, exist_ok=True)
+
+    @property
+    def dir_name(self) -> str:
+        """Get base directory name as string for compatibility."""
+        return str(self.base_dir)
+
+
+class DatasetManager:
+    """Manages dataset creation and loading."""
+
+    def __init__(self, config: Config):
+        self.config = config
+        self.train_loader1 = None
+        self.train_loader2 = None
+        self.all_loader1 = None
+        self.all_loader2 = None
+        self._setup_datasets()
+
+    def _create_transforms(self) -> Tuple[transforms.Compose, transforms.Compose]:
+        """Create transformation pipelines for both agents."""
+        trans_ang1 = transforms.Compose(
+            [
+                transforms.RandomRotation(
+                    degrees=(-self.config.angle_a, -self.config.angle_a)
+                ),
+                transforms.ToTensor(),
+            ]
+        )
+
+        trans_ang2 = transforms.Compose(
+            [
+                transforms.RandomRotation(
+                    degrees=(self.config.angle_b, self.config.angle_b)
+                ),
+                transforms.ToTensor(),
+            ]
+        )
+
+        return trans_ang1, trans_ang2
+
+    def _setup_datasets(self) -> None:
+        """Setup datasets and data loaders for both agents."""
+        trans_ang1, trans_ang2 = self._create_transforms()
+
+        # Create datasets
+        trainval_dataset1 = datasets.MNIST(
+            "./../data", train=True, transform=trans_ang1, download=False
+        )
+        trainval_dataset2 = datasets.MNIST(
+            "./../data", train=True, transform=trans_ang2, download=False
+        )
+
+        # Calculate subset sizes
+        n_samples = len(trainval_dataset1)
+        D = int(n_samples * self.config.data_fraction)
+
+        # Create subsets
+        subset1_indices = list(range(0, D))
+        train_dataset1 = Subset(trainval_dataset1, subset1_indices)
+        train_dataset2 = Subset(trainval_dataset2, subset1_indices)
+
+        # Create data loaders
+        self.train_loader1 = torch.utils.data.DataLoader(
+            train_dataset1, batch_size=self.config.batch_size, shuffle=False
+        )
+        self.train_loader2 = torch.utils.data.DataLoader(
+            train_dataset2, batch_size=self.config.batch_size, shuffle=False
+        )
+        self.all_loader1 = torch.utils.data.DataLoader(
+            train_dataset1, batch_size=D, shuffle=False
+        )
+        self.all_loader2 = torch.utils.data.DataLoader(
+            train_dataset2, batch_size=D, shuffle=False
+        )
+
+
+class ImageRecaller:
+    """Main class for handling image recall functionality."""
+
+    def __init__(self, config: Config):
+        self.config = config
+        self.device = config.setup_device()
+        self.dir_manager = DirectoryManager(config)
+        self.dataset_manager = DatasetManager(config)
+
+    def _load_and_resize_images(
+        self, dir_name: str, agent: str, num_images: int = 10
+    ) -> List[Image.Image]:
+        """Load and resize images for concatenation."""
+        images = []
+
+        for i in range(num_images):
+            image_path = Path(dir_name) / f"recon{agent}" / f"manual_{i}.png"
+
+            if not image_path.exists():
+                raise FileNotFoundError(f"Image not found: {image_path}")
+
+            try:
+                image = Image.open(image_path)
+                images.append(image)
+            except Exception as e:
+                raise IOError(f"Error loading image {image_path}: {e}")
+
+        return images
+
+    def _resize_images_to_min_height(
+        self, images: List[Image.Image]
+    ) -> List[Image.Image]:
+        """Resize all images to minimum height while maintaining aspect ratio."""
+        if not images:
+            return images
+
+        min_height = min(img.height for img in images)
+        resized_images = []
+
+        for img in images:
+            new_width = int(img.width * min_height / img.height)
+            resized_img = img.resize((new_width, min_height), Image.BICUBIC)
+            resized_images.append(resized_img)
+
+        return resized_images
+
+    def concatenate_images_horizontally(self, dir_name: str, agent: str) -> None:
+        """
+        Concatenate multiple reconstruction images horizontally.
+
+        Args:
+            dir_name: Directory containing the images
+            agent: Agent identifier ("A" or "B")
+        """
+        try:
+            images = self._load_and_resize_images(dir_name, agent)
+            resized_images = self._resize_images_to_min_height(images)
+
+            if not resized_images:
+                raise ValueError("No images to concatenate")
+
+            # Calculate total width and create destination image
+            total_width = sum(img.width for img in resized_images)
+            height = resized_images[0].height
+            dst = Image.new("RGB", (total_width, height))
+
+            # Paste images horizontally
+            pos_x = 0
+            for img in resized_images:
+                dst.paste(img, (pos_x, 0))
+                pos_x += img.width
+
+            # Save concatenated image
+            output_path = Path(dir_name) / f"recon{agent}" / "concat.png"
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            dst.save(output_path)
+
+        except Exception as e:
+            print(f"Error concatenating images for agent {agent}: {e}")
+            raise
+
+    def decode_from_gmm(
+        self,
+        load_iteration: int = 0,
+        sigma: float = 0,
+        K: int = 10,
+        sample_num: int = 1,
+        manual: bool = True,
+    ) -> None:
+        """
+        Decode images from GMM components for both agents.
+
+        Args:
+            load_iteration: Model iteration to load
+            sigma: Sigma parameter for GMM
+            K: Number of GMM components
+            sample_num: Number of samples to generate
+            manual: Whether to use manual mode
+        """
+        dir_name = self.dir_manager.dir_name
+
+        try:
+            for i in range(K):
+                # Process Agent A
+                sample_d_a = visualize_gmm(
+                    iteration=load_iteration,
+                    sigma=sigma,
+                    K=K,
+                    decode_k=i,
+                    sample_num=sample_num,
+                    manual=manual,
+                    model_dir=dir_name,
+                    agent="A",
+                )
+
+                cnn_vae_module_mnist.decode(
+                    iteration=load_iteration,
+                    decode_k=i,
+                    sample_num=sample_num,
+                    sample_d=sample_d_a,
+                    manual=manual,
+                    model_dir=dir_name,
+                    agent="A",
+                )
+
+                # Process Agent B
+                sample_d_b = visualize_gmm(
+                    iteration=load_iteration,
+                    sigma=sigma,
+                    K=K,
+                    decode_k=i,
+                    sample_num=sample_num,
+                    manual=manual,
+                    model_dir=dir_name,
+                    agent="B",
+                )
+
+                cnn_vae_module_mnist.decode(
+                    iteration=load_iteration,
+                    decode_k=i,
+                    sample_num=sample_num,
+                    sample_d=sample_d_b,
+                    manual=manual,
+                    model_dir=dir_name,
+                    agent="B",
+                )
+
+        except Exception as e:
+            print(f"Error in GMM decoding: {e}")
+            raise
+
+    def run_recall(self, load_iteration: int = 0) -> None:
+        """
+        Run the complete image recall process.
+
+        Args:
+            load_iteration: Model iteration to load for recall
+        """
+        try:
+            # Decode images from GMM
+            self.decode_from_gmm(
+                load_iteration=load_iteration,
+                sigma=0,
+                K=10,
+                sample_num=1,
+                manual=True,
+            )
+
+            # Concatenate images for both agents
+            dir_name = self.dir_manager.dir_name
+            self.concatenate_images_horizontally(dir_name, "A")
+            self.concatenate_images_horizontally(dir_name, "B")
+
+            print(f"Image recall completed successfully. Results saved in {dir_name}")
+
+        except Exception as e:
+            print(f"Error during image recall: {e}")
+            raise
+
+
+def parse_arguments() -> Config:
+    """Parse command line arguments and return configuration."""
+    parser = argparse.ArgumentParser(
+        description="Symbol emergence based on VAE+GMM Example - Image Recall"
+    )
+
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=10,
+        metavar="B",
+        help="input batch size for training",
+    )
+    parser.add_argument(
+        "--vae-iter", type=int, default=100, metavar="V", help="number of VAE iteration"
+    )
+    parser.add_argument(
+        "--mh-iter",
+        type=int,
+        default=100,
+        metavar="M",
+        help="number of M-H mgmm iteration",
+    )
+    parser.add_argument(
+        "--category",
+        type=int,
+        default=28,
+        metavar="K",
+        help="number of category for GMM module",
+    )
+    parser.add_argument(
+        "--no-cuda", action="store_true", default=False, help="enables CUDA training"
+    )
+    parser.add_argument("--seed", type=int, default=1, metavar="S", help="random seed")
+
+    args = parser.parse_args()
+
+    # Create config object
+    config = Config()
+    config.batch_size = args.batch_size
+    config.vae_iter = args.vae_iter
+    config.mh_iter = args.mh_iter
+    config.category = args.category
+    config.no_cuda = args.no_cuda
+    config.seed = args.seed
+
+    return config
+
+
+def main() -> None:
+    """Main function to run image recall."""
+    try:
+        config = parse_arguments()
+        recaller = ImageRecaller(config)
+        recaller.run_recall(load_iteration=0)
+
+    except Exception as e:
+        print(f"Error in main execution: {e}")
+        return 1
+
+    return 0
+
+
+if __name__ == "__main__":
+    exit(main())
